@@ -120,7 +120,7 @@ export default function Auth() {
           </div>
 
           <p className="text-center text-xs text-muted-foreground mt-6">
-            Используя LegalAI, вы соглашаетесь с нашей политикой
+            Используя PravoAI, вы соглашаетесь с нашей политикой
             конфиденциальности и условиями.
           </p>
         </div>
