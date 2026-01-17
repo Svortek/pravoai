@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -16,6 +16,45 @@ const FeatureIcon = ({ icon: Icon }: { icon: React.ReactNode }) => <>{Icon}</>;
 
 export default function Index() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+
+  // Добавляем стили для скроллбара на главной странице
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      /* Стили для скроллбара в сайдбаре */
+      .chat-sidebar-container::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      .chat-sidebar-container::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+        margin: 4px 0;
+      }
+      
+      .chat-sidebar-container::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        transition: background 0.2s;
+      }
+      
+      .chat-sidebar-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+      
+      /* Для Firefox */
+      .chat-sidebar-container {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.15) rgba(255, 255, 255, 0.05);
+      }
+    `;
+    
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   const features = [
     {
@@ -152,7 +191,7 @@ export default function Index() {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="flex-1">
+      <main className="flex-1 overflow-y-auto main-content">
         {/* Hero Section */}
         <section className="mx-auto max-w-6xl px-4 md:px-8 py-12 md:py-16">
           <div className="max-w-3xl mx-auto text-center">

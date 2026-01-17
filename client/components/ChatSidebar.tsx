@@ -1,6 +1,6 @@
 import { Plus, Settings, LogOut, Trash2, X, Check, ChevronLeft } from "lucide-react";
 import { Scale } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ChatSession {
   id: string;
@@ -32,6 +32,46 @@ export const ChatSidebar = ({
 }: ChatSidebarProps) => {
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Добавляем стили для скроллбара
+  useEffect(() => {
+    // Создаем стили для скроллбара сайдбара
+    const style = document.createElement('style');
+    style.textContent = `
+      /* Стили для скроллбара в сайдбаре */
+      .chat-sidebar-container::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      .chat-sidebar-container::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+        margin: 4px 0;
+      }
+      
+      .chat-sidebar-container::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        transition: background 0.2s;
+      }
+      
+      .chat-sidebar-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+      
+      /* Для Firefox */
+      .chat-sidebar-container {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.15) rgba(255, 255, 255, 0.05);
+      }
+    `;
+    
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   const handleDeleteClick = (e: React.MouseEvent, chatId: string) => {
     e.stopPropagation();
@@ -85,8 +125,8 @@ export const ChatSidebar = ({
         </button>
       </div>
 
-      {/* Chat History */}
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* Chat History with custom scrollbar */}
+      <div className="flex-1 overflow-y-auto p-4 chat-sidebar-container">
         {chatSessions.length > 0 && (
           <>
             <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-3">
