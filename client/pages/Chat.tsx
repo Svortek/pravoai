@@ -91,6 +91,17 @@ export default function Chat() {
 
       {/* Main Chat Area */}
       <div className="flex-1 md:ml-64 flex flex-col">
+        {/* Mobile Header */}
+        <div className="md:hidden border-b border-border bg-card px-4 py-3 flex items-center gap-3">
+          <button
+            onClick={() => setShowSidebar(!showSidebar)}
+            className="p-2 hover:bg-secondary rounded-lg transition-colors"
+          >
+            {showSidebar ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+          <span className="text-sm font-medium text-foreground">LegalAI Chat</span>
+        </div>
+
         {/* Chat Messages */}
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl px-4 md:px-8 py-8 space-y-4">
