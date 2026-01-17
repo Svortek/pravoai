@@ -116,8 +116,8 @@ export const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-border pt-8">
-          <p className="text-sm text-muted-foreground text-center">
+        <div className="border-t border-border pt-6">
+          <p className="text-xs text-muted-foreground text-center">
             © 2025 LegalAI. Все права защищены.
           </p>
         </div>
