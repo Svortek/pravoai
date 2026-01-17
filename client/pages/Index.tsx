@@ -170,7 +170,7 @@ export default function Index() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="container py-12 md:py-16">
+        <section id="features" className="mx-auto max-w-6xl px-4 md:px-8 py-12 md:py-16">
           <div className="max-w-3xl mx-auto mb-12 text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               Мощные возможности
@@ -191,7 +191,7 @@ export default function Index() {
         </section>
 
         {/* How It Works Section */}
-        <section className="container py-12 md:py-16">
+        <section className="mx-auto max-w-6xl px-4 md:px-8 py-12 md:py-16">
           <div className="max-w-3xl mx-auto mb-12 text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               Как это работает
@@ -221,7 +221,7 @@ export default function Index() {
         </section>
 
         {/* Pricing Section */}
-        <section id="pricing" className="container py-12 md:py-16">
+        <section id="pricing" className="mx-auto max-w-6xl px-4 md:px-8 py-12 md:py-16">
           <div className="max-w-3xl mx-auto mb-12 text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               Прозрачные цены
@@ -275,7 +275,7 @@ export default function Index() {
         </section>
 
         {/* FAQ Section */}
-        <section id="faq" className="container py-12 md:py-16">
+        <section id="faq" className="mx-auto max-w-6xl px-4 md:px-8 py-12 md:py-16">
           <div className="max-w-3xl mx-auto mb-12 text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               Часто задаваемые вопросы
