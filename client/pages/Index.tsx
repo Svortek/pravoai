@@ -236,7 +236,7 @@ export default function Index() {
                 key={index}
                 className={`rounded-lg border p-8 ${
                   plan.featured
-                    ? "bg-accent text-accent-foreground border-accent scale-105 md:scale-100 md:shadow-lg"
+                    ? "bg-accent text-accent-foreground border-accent"
                     : "bg-card text-card-foreground border-border"
                 }`}
               >
