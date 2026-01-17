@@ -293,16 +293,20 @@ export default function Index() {
                 >
                   <span className="font-semibold text-foreground">{faq.question}</span>
                   <ChevronDown
-                    className={`w-5 h-5 text-accent transition-transform flex-shrink-0 ${
+                    className={`w-5 h-5 text-accent transition-transform duration-300 flex-shrink-0 ${
                       expandedFaq === index ? "transform rotate-180" : ""
                     }`}
                   />
                 </button>
-                {expandedFaq === index && (
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    expandedFaq === index ? "max-h-96" : "max-h-0"
+                  }`}
+                >
                   <div className="px-6 pb-6 text-muted-foreground border-t border-border pt-4">
                     {faq.answer}
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </div>
