@@ -2,17 +2,27 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Send, Menu, X } from "lucide-react";
 import { ChatSidebar } from "@/components/ChatSidebar";
+import { SettingsModal } from "@/components/SettingsModal";
+
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
+
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: Message[];
+  createdAt: Date;
+}
 
 export default function Chat() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([
-    {
-      role: "assistant",
-      content: "Добро пожаловать в LegalAI! 👋 Я ваш персональный юридический консультант на основе ИИ. Как я могу вам помочь? Задайте любой юридический вопрос, и я предоставлю вам профессиональную консультацию.",
-    },
-  ]);
+  const [showSettings, setShowSettings] = useState(false);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -24,11 +34,39 @@ export default function Chat() {
       return;
     }
     setUser(JSON.parse(userData));
+    
+    // Initialize with first new chat
+    const newChat = createNewChat();
+    setCurrentChatId(newChat.id);
   }, [navigate]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [chatSessions, currentChatId]);
+
+  const createNewChat = (): ChatSession => {
+    const newChat: ChatSession = {
+      id: Date.now().toString(),
+      title: "Новый чат",
+      messages: [
+        {
+          role: "assistant",
+          content: "Добро пожаловать в LegalAI! 👋 Я ваш персональный юридический консультант на основе ИИ. Как я могу вам помочь? Задайте любой юридический вопрос, и я предоставлю вам профессиональную консультацию.",
+        },
+      ],
+      createdAt: new Date(),
+    };
+    setChatSessions((prev) => [newChat, ...prev]);
+    return newChat;
+  };
+
+  const generateChatTitle = (text: string): string => {
+    return text.length > 20 ? text.substring(0, 20) + "..." : text;
+  };
+
+  const getCurrentChat = (): ChatSession | undefined => {
+    return chatSessions.find((chat) => chat.id === currentChatId);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -36,21 +74,43 @@ export default function Chat() {
   };
 
   const handleNewChat = () => {
-    setMessages([
-      {
-        role: "assistant",
-        content: "Добро пожаловать в LegalAI! 👋 Я ваш персональный юридический консультант на основе ИИ. Как я могу вам помочь? Задайте любой юридический вопрос, и я предоставлю вам профессиональную консультацию.",
-      },
-    ]);
+    const newChat = createNewChat();
+    setCurrentChatId(newChat.id);
+    setInput("");
+    setShowSidebar(false);
+  };
+
+  const handleChatSelect = (chatId: string) => {
+    setCurrentChatId(chatId);
+    setShowSidebar(false);
     setInput("");
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || !currentChatId) return;
 
     const userMessage = input;
-    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+    
+    setChatSessions((prev) =>
+      prev.map((chat) => {
+        if (chat.id === currentChatId) {
+          const updatedChat = {
+            ...chat,
+            messages: [...chat.messages, { role: "user" as const, content: userMessage }],
+          };
+          
+          // Auto-generate title from first user message
+          if (chat.title === "Новый чат" && chat.messages.length === 1) {
+            updatedChat.title = generateChatTitle(userMessage);
+          }
+          
+          return updatedChat;
+        }
+        return chat;
+      })
+    );
+
     setInput("");
     setLoading(true);
 
@@ -64,7 +124,19 @@ export default function Chat() {
       ];
 
       const response = responses[Math.floor(Math.random() * responses.length)];
-      setMessages((prev) => [...prev, { role: "assistant", content: response }]);
+      
+      setChatSessions((prev) =>
+        prev.map((chat) => {
+          if (chat.id === currentChatId) {
+            return {
+              ...chat,
+              messages: [...chat.messages, { role: "assistant" as const, content: response }],
+            };
+          }
+          return chat;
+        })
+      );
+      
       setLoading(false);
     }, 800);
   };
@@ -73,21 +145,41 @@ export default function Chat() {
     return null;
   }
 
+  const currentChat = getCurrentChat();
+  const messages = currentChat?.messages || [];
+
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar - Desktop */}
       <div className="hidden md:block">
-        <ChatSidebar onNewChat={handleNewChat} onLogout={handleLogout} />
+        <ChatSidebar
+          chatSessions={chatSessions}
+          currentChatId={currentChatId}
+          onNewChat={handleNewChat}
+          onSelectChat={handleChatSelect}
+          onOpenSettings={() => setShowSettings(true)}
+          onLogout={handleLogout}
+        />
       </div>
 
       {/* Sidebar - Mobile */}
       {showSidebar && (
         <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setShowSidebar(false)}>
           <div onClick={(e) => e.stopPropagation()}>
-            <ChatSidebar onNewChat={handleNewChat} onLogout={handleLogout} />
+            <ChatSidebar
+              chatSessions={chatSessions}
+              currentChatId={currentChatId}
+              onNewChat={handleNewChat}
+              onSelectChat={handleChatSelect}
+              onOpenSettings={() => setShowSettings(true)}
+              onLogout={handleLogout}
+            />
           </div>
         </div>
       )}
+
+      {/* Settings Modal */}
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
 
       {/* Main Chat Area */}
       <div className="flex-1 md:ml-64 flex flex-col">
@@ -99,7 +191,9 @@ export default function Chat() {
           >
             {showSidebar ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <span className="text-sm font-medium text-foreground">LegalAI Chat</span>
+          <span className="text-sm font-medium text-foreground truncate">
+            {currentChat?.title || "LegalAI Chat"}
+          </span>
         </div>
 
         {/* Chat Messages */}
@@ -126,8 +220,14 @@ export default function Chat() {
                 <div className="bg-secondary text-secondary-foreground px-4 py-3 rounded-2xl">
                   <div className="flex gap-2">
                     <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"></div>
-                    <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                    <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+                    <div
+                      className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"
+                      style={{ animationDelay: "0.4s" }}
+                    ></div>
                   </div>
                 </div>
               </div>
