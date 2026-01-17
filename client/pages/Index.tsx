@@ -129,15 +129,15 @@ export default function Index() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="container py-20 md:py-32">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
+        <section className="container py-12 md:py-16">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4 leading-tight">
               Профессиональная юридическая консультация, работающая на ИИ
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
+            <p className="text-lg md:text-xl text-muted-foreground mb-6 leading-relaxed">
               Получайте мгновенную и точную юридическую консультацию для любой ситуации. Доступно 24/7, безопасно и надежно для тысяч профессионалов по всему миру.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 to="/auth"
                 className="px-8 py-3 rounded-lg bg-accent text-accent-foreground font-semibold hover:opacity-90 transition-opacity text-center"
@@ -152,8 +152,8 @@ export default function Index() {
         </section>
 
         {/* Stats Section */}
-        <section className="container py-16 md:py-20">
-          <div className="grid md:grid-cols-3 gap-8">
+        <section className="container py-10 md:py-12">
+          <div className="grid md:grid-cols-3 gap-8 max-w-3xl mx-auto">
             <div className="text-center">
               <p className="text-4xl md:text-5xl font-bold text-accent mb-2">50K+</p>
               <p className="text-lg text-muted-foreground">Активных пользователей</p>
@@ -170,16 +170,16 @@ export default function Index() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="container py-20 md:py-32">
-          <div className="max-w-2xl mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+        <section id="features" className="container py-12 md:py-16">
+          <div className="max-w-3xl mx-auto mb-12 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               Мощные возможности
             </h2>
             <p className="text-lg text-muted-foreground">
               Всё необходимое для профессиональной юридической консультации
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {features.map((feature, index) => (
               <div key={index} className="p-6 rounded-lg bg-card border border-border hover:border-accent transition-colors">
                 <div className="mb-4">{feature.icon}</div>
@@ -191,16 +191,16 @@ export default function Index() {
         </section>
 
         {/* How It Works Section */}
-        <section className="container py-20 md:py-32">
-          <div className="max-w-2xl mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+        <section className="container py-12 md:py-16">
+          <div className="max-w-3xl mx-auto mb-12 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               Как это работает
             </h2>
             <p className="text-lg text-muted-foreground">
               Простая, быстрая и эффективная юридическая консультация за 4 шага
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
             {steps.map((step, index) => (
               <div key={index} className="relative">
                 <div className="flex items-start gap-4">
@@ -221,16 +221,16 @@ export default function Index() {
         </section>
 
         {/* Pricing Section */}
-        <section id="pricing" className="container py-20 md:py-32">
-          <div className="max-w-2xl mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+        <section id="pricing" className="container py-12 md:py-16">
+          <div className="max-w-3xl mx-auto mb-12 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
               Прозрачные цены
             </h2>
             <p className="text-lg text-muted-foreground">
               Выберите план, который подходит вашим потребностям
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
             {plans.map((plan, index) => (
               <div
                 key={index}
