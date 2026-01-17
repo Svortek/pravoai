@@ -1,20 +1,31 @@
-import { Plus, Settings, LogOut, Moon, Sun } from "lucide-react";
+import { Plus, Settings, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Scale } from "lucide-react";
 
-interface ChatSidebarProps {
-  onNewChat: () => void;
-  onLogout: () => void;
-  isDark?: boolean;
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: any[];
+  createdAt: Date;
 }
 
-export const ChatSidebar = ({ onNewChat, onLogout, isDark = true }: ChatSidebarProps) => {
-  const chatHistory = [
-    { id: 1, title: "Вопрос об аренде квартиры" },
-    { id: 2, title: "Консультация по трудовому праву" },
-    { id: 3, title: "Семейные споры - расторжение" },
-  ];
+interface ChatSidebarProps {
+  chatSessions: ChatSession[];
+  currentChatId: string | null;
+  onNewChat: () => void;
+  onSelectChat: (chatId: string) => void;
+  onOpenSettings: () => void;
+  onLogout: () => void;
+}
 
+export const ChatSidebar = ({
+  chatSessions,
+  currentChatId,
+  onNewChat,
+  onSelectChat,
+  onOpenSettings,
+  onLogout,
+}: ChatSidebarProps) => {
   return (
     <div className="w-64 bg-card border-r border-border flex flex-col h-screen fixed left-0 top-0">
       {/* Logo and New Chat */}
@@ -34,22 +45,35 @@ export const ChatSidebar = ({ onNewChat, onLogout, isDark = true }: ChatSidebarP
 
       {/* Chat History */}
       <div className="flex-1 overflow-y-auto p-4">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-3">История</h3>
-        <div className="space-y-2">
-          {chatHistory.map((chat) => (
-            <button
-              key={chat.id}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors truncate"
-            >
-              {chat.title}
-            </button>
-          ))}
-        </div>
+        {chatSessions.length > 0 && (
+          <>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase mb-3">История</h3>
+            <div className="space-y-2">
+              {chatSessions.map((chat) => (
+                <button
+                  key={chat.id}
+                  onClick={() => onSelectChat(chat.id)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors truncate ${
+                    currentChatId === chat.id
+                      ? "bg-accent text-accent-foreground font-medium"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  }`}
+                  title={chat.title}
+                >
+                  {chat.title}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Settings and Logout */}
       <div className="border-t border-border p-4 space-y-2">
-        <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors">
+        <button
+          onClick={onOpenSettings}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+        >
           <Settings className="w-4 h-4" />
           <span>Параметры</span>
         </button>
