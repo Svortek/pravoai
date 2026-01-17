@@ -22,7 +22,7 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border">
-        <div className="container h-16 flex items-center">
+        <div className="mx-auto max-w-6xl px-4 md:px-8 h-16 flex items-center">
           <Link to="/" className="flex items-center gap-2 font-bold text-lg">
             <Scale className="w-6 h-6 text-accent" />
             <span className="text-foreground">LegalAI</span>
