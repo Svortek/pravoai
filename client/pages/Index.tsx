@@ -129,7 +129,7 @@ export default function Index() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="container py-12 md:py-16">
+        <section className="mx-auto max-w-6xl px-4 md:px-8 py-12 md:py-16">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4 leading-tight">
               Профессиональная юридическая консультация, работающая на ИИ
