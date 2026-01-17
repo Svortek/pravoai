@@ -21,11 +21,22 @@ export default function Chat() {
   const [user, setUser] = useState<any>(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>(() => {
+    const savedChats = localStorage.getItem("chatSessions");
+    return savedChats ? JSON.parse(savedChats) : [];
+  });
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Для управления новым чатом
+  const [isNewChatActive, setIsNewChatActive] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem("chatSessions", JSON.stringify(chatSessions));
+  }, [chatSessions]);
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
@@ -35,34 +46,57 @@ export default function Chat() {
     }
     setUser(JSON.parse(userData));
 
-    // Initialize with first new chat
-    const newChat = createNewChat();
-    setCurrentChatId(newChat.id);
+    // Не создаем чат автоматически - только когда пользователь напишет первое сообщение
+    if (chatSessions.length === 0) {
+      setCurrentChatId(null);
+      setIsNewChatActive(true);
+    } else if (!currentChatId) {
+      // Выбираем последний активный чат
+      setCurrentChatId(chatSessions[0].id);
+    }
   }, [navigate]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatSessions, currentChatId]);
 
-  const createNewChat = (): ChatSession => {
-    const newChat: ChatSession = {
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
+  const createNewChatSession = (firstMessage: string): ChatSession => {
+    const title = firstMessage.length > 15 
+      ? firstMessage.substring(0, 15) + "..." 
+      : firstMessage;
+    
+    return {
       id: Date.now().toString(),
-      title: "Новый чат",
+      title,
       messages: [
         {
           role: "assistant",
-          content:
-            "Добро пожаловать в LegalAI! 👋 Я ваш персональный юридический консультант на основе ИИ. Как я могу вам помочь? Задайте любой юридический вопрос, и я предоставлю вам профессиональную консультацию.",
+          content: "Добро пожаловать в PravoAI👋! Я ваш персональный юридический консультант. Как я могу вам помочь? Задайте любой юридический вопрос, и я предоставлю вам профессиональную консультацию.",
         },
       ],
       createdAt: new Date(),
     };
-    setChatSessions((prev) => [newChat, ...prev]);
-    return newChat;
   };
 
-  const generateChatTitle = (text: string): string => {
-    return text.length > 20 ? text.substring(0, 20) + "..." : text;
+  const handleDeleteChat = async (chatId: string) => {
+    setChatSessions((prev) => {
+      const newChats = prev.filter((chat) => chat.id !== chatId);
+      
+      if (currentChatId === chatId) {
+        if (newChats.length > 0) {
+          setCurrentChatId(newChats[0].id);
+        } else {
+          setCurrentChatId(null);
+          setIsNewChatActive(true);
+        }
+      }
+      
+      return newChats;
+    });
   };
 
   const getCurrentChat = (): ChatSession | undefined => {
@@ -71,59 +105,77 @@ export default function Chat() {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("chatSessions");
     navigate("/");
   };
 
   const handleNewChat = () => {
-    const newChat = createNewChat();
-    setCurrentChatId(newChat.id);
+    // Просто активируем режим нового чата, но не создаем его
+    setCurrentChatId(null);
+    setIsNewChatActive(true);
     setInput("");
     setShowSidebar(false);
+    setIsSidebarCollapsed(false);
   };
 
   const handleChatSelect = (chatId: string) => {
     setCurrentChatId(chatId);
+    setIsNewChatActive(false);
     setShowSidebar(false);
+    setIsSidebarCollapsed(false);
     setInput("");
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !currentChatId) return;
+    if (!input.trim()) return;
 
     const userMessage = input;
+    let targetChatId = currentChatId;
 
-    setChatSessions((prev) =>
-      prev.map((chat) => {
-        if (chat.id === currentChatId) {
-          const updatedChat = {
-            ...chat,
-            messages: [
-              ...chat.messages,
-              { role: "user" as const, content: userMessage },
-            ],
-          };
-
-          // Auto-generate title from first user message
-          if (chat.title === "Новый чат" && chat.messages.length === 1) {
-            updatedChat.title = generateChatTitle(userMessage);
+    // Если это новый чат (еще не создан)
+    if (isNewChatActive || !currentChatId) {
+      // Создаем новый чат с первым сообщением
+      const newChat = createNewChatSession(userMessage);
+      targetChatId = newChat.id;
+      
+      // Добавляем пользовательское сообщение
+      newChat.messages.push({ role: "user" as const, content: userMessage });
+      
+      setChatSessions((prev) => [newChat, ...prev]);
+      setCurrentChatId(newChat.id);
+      setIsNewChatActive(false);
+    } else {
+      // Добавляем сообщение в существующий чат
+      setChatSessions((prev) =>
+        prev.map((chat) => {
+          if (chat.id === currentChatId) {
+            return {
+              ...chat,
+              messages: [
+                ...chat.messages,
+                { role: "user" as const, content: userMessage },
+              ],
+            };
           }
-
-          return updatedChat;
-        }
-        return chat;
-      }),
-    );
+          return chat;
+        }),
+      );
+    }
 
     setInput("");
     setLoading(true);
 
+    // Сохраняем chatId для использования в setTimeout
+    const chatIdForResponse = targetChatId;
+
+    // Симуляция ответа AI
     setTimeout(() => {
       const responses = [
         "Отличный вопрос! В соответствии с действующим законодательством...",
         "Это важный момент для вашей ситуации. Рекомендую рассмотреть следующие варианты...",
         "Согласно судебной практике, в подобных случаях...",
-        "Пожалуйста, уточните детали. Это поможет мне дать более точный совет...",
+        "Пожалуйста, уточните детали. Это поможет мне дать более точный ответ...",
         "В этом вопросе ключевую роль играет принцип добросовестности. Давайте разберемся подробнее...",
       ];
 
@@ -131,7 +183,7 @@ export default function Chat() {
 
       setChatSessions((prev) =>
         prev.map((chat) => {
-          if (chat.id === currentChatId) {
+          if (chat.id === chatIdForResponse) {
             return {
               ...chat,
               messages: [
@@ -166,6 +218,9 @@ export default function Chat() {
           onSelectChat={handleChatSelect}
           onOpenSettings={() => setShowSettings(true)}
           onLogout={handleLogout}
+          onDeleteChat={handleDeleteChat}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebarCollapse}
         />
       </div>
 
@@ -183,6 +238,9 @@ export default function Chat() {
               onSelectChat={handleChatSelect}
               onOpenSettings={() => setShowSettings(true)}
               onLogout={handleLogout}
+              onDeleteChat={handleDeleteChat}
+              isCollapsed={false}
+              onToggleCollapse={toggleSidebarCollapse}
             />
           </div>
         </div>
@@ -195,7 +253,7 @@ export default function Chat() {
       />
 
       {/* Main Chat Area */}
-      <div className="flex-1 md:ml-64 flex flex-col">
+      <div className={`flex-1 flex flex-col ${!isSidebarCollapsed ? "md:ml-64" : ""}`}>
         {/* Mobile Header */}
         <div className="md:hidden border-b border-border bg-card px-4 py-3 flex items-center gap-3">
           <button
@@ -209,13 +267,28 @@ export default function Chat() {
             )}
           </button>
           <span className="text-sm font-medium text-foreground truncate">
-            {currentChat?.title || "LegalAI Chat"}
+            {currentChat?.title || (isNewChatActive ? "Новый чат" : "PravoAI Chat")}
           </span>
         </div>
 
         {/* Chat Messages */}
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-3xl px-4 md:px-8 py-8 space-y-4">
+          <div className={`mx-auto py-8 space-y-4 ${
+            isSidebarCollapsed ? "px-4 md:px-8 max-w-4xl" : "px-4 md:px-8 max-w-3xl"
+          }`}>
+            {/* Приветственное сообщение для нового чата */}
+            {(!currentChatId || isNewChatActive) && messages.length === 0 && (
+              <div className="flex justify-start">
+                <div className="bg-secondary text-secondary-foreground px-4 py-3 rounded-2xl max-w-sm lg:max-w-md xl:max-w-lg">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                    Добро пожаловать в PravoAI👋! Я ваш персональный юридический консультант. 
+                    Как я могу вам помочь? Задайте любой юридический вопрос, и я предоставлю вам профессиональную консультацию.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Сообщения из чата */}
             {messages.map((message, index) => (
               <div
                 key={index}
@@ -234,6 +307,7 @@ export default function Chat() {
                 </div>
               </div>
             ))}
+            
             {loading && (
               <div className="flex justify-start">
                 <div className="bg-secondary text-secondary-foreground px-4 py-3 rounded-2xl">
@@ -257,7 +331,9 @@ export default function Chat() {
 
         {/* Input Area */}
         <div className="border-t border-border bg-background">
-          <div className="mx-auto max-w-3xl px-4 md:px-8 py-4">
+          <div className={`mx-auto py-4 ${
+            isSidebarCollapsed ? "px-4 md:px-8 max-w-4xl" : "px-4 md:px-8 max-w-3xl"
+          }`}>
             <form onSubmit={handleSendMessage} className="space-y-3">
               <div className="flex gap-2">
                 <input
@@ -277,7 +353,7 @@ export default function Chat() {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground text-center">
-                LegalAI может делать ошибки. Для важных решений
+                PravoAI может делать ошибки. Для важных решений
                 проконсультируйтесь с адвокатом.
               </p>
             </form>
