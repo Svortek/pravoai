@@ -2,11 +2,14 @@ package password
 
 import "golang.org/x/crypto/bcrypt"
 
-func Hash(p string) (string, error) {
-	b, err := bcrypt.GenerateFromPassword([]byte(p), 12)
-	return string(b), err
+func HashPassword(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
 }
 
-func Compare(hash, p string) bool {
-	return bcrypt.CompareFromPassword([]byte(hash), []byte(p)) == nil
+func ComparePassword(hash, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }

@@ -1,51 +1,57 @@
 package auth
 
 import (
-	"encoding/json"
 	"net/http"
-	"pravoai/backend/internal/middleware"
-	"pravoai/backend/internal/pkg/jwt"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
 	service *Service
 }
 
-func NewHandler() *Handler {
-	return &Handler{service: NewService()}
+func NewHandler(repo *Repository) *Handler {
+	return &Handler{
+		service: NewService(repo),
+	}
 }
 
-func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+type RegisterDTO struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (h *Handler) Register(c *gin.Context) {
 	var dto RegisterDTO
-	json.NewDecoder(r.Body).Decode(&dto)
-
-	if err := h.service.Register(dto); err != nil {
-		middleware.JSONError(w, 400, err.Error(), "Ошибка регистрации")
+	if err := c.ShouldBindJSON(&dto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.Write([]byte(`{"status":"ok"}`))
+	if err := h.service.Register(c.Request.Context(), dto.Email, dto.Password); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"status": "ok"})
 }
 
-func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+type LoginDTO struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (h *Handler) Login(c *gin.Context) {
 	var dto LoginDTO
-	json.NewDecoder(r.Body).Decode(&dto)
-
-	userID, err := h.service.Login(dto)
-	if err != nil {
-		middleware.JSONError(w, 401, err.Error(), "Ошибка входа")
+	if err := c.ShouldBindJSON(&dto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	token, _ := jwt.Generate(userID)
-	json.NewEncoder(w).Encode(map[string]string{"token": token})
-}
-
-func (h *Handler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
-	token := r.URL.Query().Get("token")
-	if !h.service.repo.VerifyEmail(token) {
-		middleware.JSONError(w, 400, "INVALID_TOKEN", "Ссылка недействительна")
+	if err := h.service.Login(c.Request.Context(), dto.Email, dto.Password); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-	w.Write([]byte(`{"status":"verified"}`))
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }

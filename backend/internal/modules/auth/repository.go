@@ -1,55 +1,48 @@
 package auth
 
 import (
+	"context"
 	"database/sql"
 	"errors"
-	"pravoai/backend/internal/config"
 
-	"github.com/google/uuid"
+	"pravoai/backend/internal/domain/user"
 )
 
 type Repository struct {
 	db *sql.DB
 }
 
-func NewRepository() *Repository {
-	return &Repository{db: config.DB}
+func NewRepository(db *sql.DB) *Repository {
+	return &Repository{db: db}
 }
 
-func (r *Repository) CreateUser(id, email, name, hash string) error {
-	_, err := r.db.Exec(`
-		INSERT INTO users (id, email, name, password_hash)
-		VALUES ($1,$2,$3,$4)
-	`, id, email, name, hash)
-	return err
-}
+func (r *Repository) GetByEmail(ctx context.Context, email string) (*user.User, error) {
+	query := `
+		SELECT id, email, password_hash, is_active
+		FROM users
+		WHERE email = $1
+	`
 
-func (r *Repository) GetUserByEmail(email string) (*User, error) {
-	row := r.db.QueryRow(`
-		SELECT id, password_hash, is_verified FROM users WHERE email=$1
-	`, email)
+	var u user.User
 
-	u := &User{}
-	err := row.Scan(&u.ID, &u.PasswordHash, &u.IsVerified)
+	err := r.db.QueryRowContext(ctx, query, email).
+		Scan(&u.ID, &u.Email, &u.Password, &u.IsActive)
+
 	if err != nil {
-		return nil, errors.New("not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
 	}
-	return u, nil
+
+	return &u, nil
 }
 
-func (r *Repository) CreateVerifyToken(userID string, token string) {
-	r.db.Exec(`
-		INSERT INTO email_verifications (id, user_id, token)
-		VALUES ($1,$2,$3)
-	`, uuid.New(), userID, token)
-}
-
-func (r *Repository) VerifyEmail(token string) bool {
-	res, _ := r.db.Exec(`
-		UPDATE users SET is_verified=true
-		WHERE id=(SELECT user_id FROM email_verifications WHERE token=$1)
-	`, token)
-
-	rows, _ := res.RowsAffected()
-	return rows > 0
+func (r *Repository) Create(ctx context.Context, u *user.User) error {
+	query := `
+		INSERT INTO users (email, password_hash, is_active)
+		VALUES ($1, $2, $3)
+	`
+	_, err := r.db.ExecContext(ctx, query, u.Email, u.Password, u.IsActive)
+	return err
 }

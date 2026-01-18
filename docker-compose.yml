@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: pravo-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: pravoai
+      POSTGRES_USER: pravo
+      POSTGRES_PASSWORD: pravo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.yml
+    container_name: pravo-backend
+    depends_on:
+      - postgres
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8080:8080"
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.yml
+    container_name: pravo-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    restart: always
+volumes:
+  postgres_data:
