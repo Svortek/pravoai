@@ -2,7 +2,7 @@ package mail
 
 import (
 	"fmt"
-	"pravoai/internal/config"
+	"pravoai/backend/internal/config"
 )
 
 func SendVerification(email, token string) error {

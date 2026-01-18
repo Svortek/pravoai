@@ -2,7 +2,7 @@ package chat
 
 import (
 	"database/sql"
-	"pravoai/internal/config"
+	"pravoai/backend/internal/config"
 )
 
 type Repository struct {

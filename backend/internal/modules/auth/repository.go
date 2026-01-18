@@ -3,7 +3,7 @@ package auth
 import (
 	"database/sql"
 	"errors"
-	"pravoai/internal/config"
+	"pravoai/backend/internal/config"
 
 	"github.com/google/uuid"
 )

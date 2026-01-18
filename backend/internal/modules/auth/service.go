@@ -2,7 +2,7 @@ package auth
 
 import (
 	"errors"
-	"pravoai/pkg/password"
+	"pravoai/backend/internal/pkg/password"
 
 	"github.com/google/uuid"
 )

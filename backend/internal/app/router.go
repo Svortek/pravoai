@@ -2,8 +2,8 @@ package app
 
 import (
 	"net/http"
-	"pravoai/internal/middleware"
-	"pravoai/internal/modules/auth"
+	"pravoai/backend/internal/middleware"
+	"pravoai/backend/internal/modules/auth"
 )
 
 func SetupRouter() http.Handler {

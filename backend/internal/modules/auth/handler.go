@@ -3,8 +3,8 @@ package auth
 import (
 	"encoding/json"
 	"net/http"
-	"pravoai/internal/middleware"
-	"pravoai/pkg/jwt"
+	"pravoai/backend/internal/middleware"
+	"pravoai/backend/internal/pkg/jwt"
 )
 
 type Handler struct {

@@ -1,6 +1,6 @@
 package main
 
-import "pravoai/internal/app"
+import "pravoai/backend/internal/app"
 
 func main() {
 	app.Run()
