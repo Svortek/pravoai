@@ -1,57 +1,118 @@
+// internal/modules/auth/handler.go
 package auth
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"pravoai/backend/internal/pkg/jwt"
 )
 
 type Handler struct {
-	service *Service
+	service      *Service
+	tokenManager *jwt.TokenManager
 }
 
-func NewHandler(repo *Repository) *Handler {
+func NewHandler(repo *Repository, tokenManager *jwt.TokenManager) *Handler {
 	return &Handler{
-		service: NewService(repo),
+		service:      NewService(repo, tokenManager),
+		tokenManager: tokenManager,
 	}
 }
 
-type RegisterDTO struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+// DTO для запросов
+type RegisterRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Name     string `json:"name" binding:"required,min=2"`
+	Password string `json:"password" binding:"required,min=6"`
 }
 
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+type AuthResponse struct {
+	Token string      `json:"token"`
+	User  interface{} `json:"user"`
+}
+
+// Register - обработчик регистрации
 func (h *Handler) Register(c *gin.Context) {
-	var dto RegisterDTO
-	if err := c.ShouldBindJSON(&dto); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	var req RegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Неверные данные",
+			"details": err.Error(),
+		})
 		return
 	}
 
-	if err := h.service.Register(c.Request.Context(), dto.Email, dto.Password); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	user, err := h.service.Register(c.Request.Context(), req.Email, req.Name, req.Password)
+	if err != nil {
+		status := http.StatusBadRequest
+		if err == ErrUserExists {
+			status = http.StatusConflict
+		}
+		c.JSON(status, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"status": "ok"})
+	// Генерируем токен
+	token, err := h.tokenManager.GenerateToken(user.ID, user.Email, 24*time.Hour)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Ошибка генерации токена",
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, AuthResponse{
+		Token: token,
+		User: gin.H{
+			"id":         user.ID,
+			"email":      user.Email,
+			"name":       user.Name,
+			"is_active":  user.IsActive,
+			"created_at": user.CreatedAt,
+		},
+	})
 }
 
-type LoginDTO struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
+// Login - обработчик входа
 func (h *Handler) Login(c *gin.Context) {
-	var dto LoginDTO
-	if err := c.ShouldBindJSON(&dto); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	var req LoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Неверные данные",
+			"details": err.Error(),
+		})
 		return
 	}
 
-	if err := h.service.Login(c.Request.Context(), dto.Email, dto.Password); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+	user, token, err := h.service.Login(c.Request.Context(), req.Email, req.Password)
+	if err != nil {
+		status := http.StatusUnauthorized
+		if err == ErrInactive {
+			status = http.StatusForbidden
+		}
+		c.JSON(status, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	c.JSON(http.StatusOK, AuthResponse{
+		Token: token,
+		User: gin.H{
+			"id":         user.ID,
+			"email":      user.Email,
+			"name":       user.Name,
+			"is_active":  user.IsActive,
+			"created_at": user.CreatedAt,
+		},
+	})
 }

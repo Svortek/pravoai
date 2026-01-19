@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Send, Menu, X, Square } from "lucide-react";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { SettingsModal } from "@/components/SettingsModal";
+import { useAuth } from "@/hooks/use-auth";
 
 interface Message {
   role: "user" | "assistant";
@@ -18,6 +19,7 @@ interface ChatSession {
 
 export default function Chat() {
   const navigate = useNavigate();
+  const { user: authUser, isAuthenticated, logout: authLogout } = useAuth();
   const [user, setUser] = useState<any>(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -114,12 +116,11 @@ export default function Chat() {
   }, [chatSessions]);
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (!userData) {
+    if (!isAuthenticated()) {
       navigate("/auth");
       return;
     }
-    setUser(JSON.parse(userData));
+    setUser(authUser);
 
     // Не создаем чат автоматически - только когда пользователь напишет первое сообщение
     if (chatSessions.length === 0) {
@@ -262,9 +263,8 @@ export default function Chat() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
     localStorage.removeItem("chatSessions");
-    navigate("/");
+    authLogout();
   };
 
   const handleNewChat = () => {

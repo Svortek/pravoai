@@ -1,28 +1,83 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Scale } from "lucide-react";
+import { useToast } from "../hooks/use-toast";
+import { useAuth } from "../hooks/use-auth";
 
 export default function Auth() {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+
+  // Redirect to chat if already authenticated
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate("/chat");
+    }
+  }, [isAuthenticated, navigate]);
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLogin) {
+    setIsLoading(true);
+
+    try {
+      const endpoint = isLogin ? "/login" : "/register";
+      const payload = isLogin
+        ? { email, password }
+        : { email, password, name };
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = errorData.error || "Ошибка при аутентификации";
+        toast({
+          title: "Ошибка",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+
+      // Store token and user info
+      localStorage.setItem("token", data.token);
       localStorage.setItem(
         "user",
-        JSON.stringify({ email, isAuthenticated: true }),
+        JSON.stringify({
+          email: data.email,
+          isAuthenticated: true,
+          name: name || email,
+        }),
       );
-    } else {
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ email, name, isAuthenticated: true }),
-      );
+
+      toast({
+        title: "Успешно",
+        description: isLogin ? "Вы вошли в систему" : "Аккаунт создан",
+      });
+
+      navigate("/chat");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Неизвестная ошибка";
+      toast({
+        title: "Ошибка",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-    navigate("/chat");
   };
 
   return (
@@ -88,9 +143,10 @@ export default function Auth() {
 
               <button
                 type="submit"
-                className="w-full py-2 rounded-lg bg-accent text-accent-foreground font-medium hover:opacity-90 transition-opacity"
+                disabled={isLoading}
+                className="w-full py-2 rounded-lg bg-accent text-accent-foreground font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLogin ? "Войти" : "Создать аккаунт"}
+                {isLoading ? "Загрузка..." : isLogin ? "Войти" : "Создать аккаунт"}
               </button>
             </form>
 
@@ -103,6 +159,7 @@ export default function Auth() {
                     setEmail("");
                     setPassword("");
                     setName("");
+                    setIsLoading(false);
                   }}
                   className="text-accent hover:underline font-medium"
                 >
